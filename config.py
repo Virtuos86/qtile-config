@@ -3,7 +3,11 @@
 
 """
 Used applications and utils:
-    amixer, feh, firefox, gnome-terminal, nemo, pidgin, rofi, scrot, vlc
+    amixer, feh, firefox, gnome-terminal, nemo, pidgin, rofi, scrot, vlc, xterm
+
+--------------------------------------------------------------------------------
+
+!: On my hardware configuration may be need `pavucontrol'.
 """
 
 import sys
@@ -21,9 +25,6 @@ from libqtile.widget import base
 from libqtile.manager import Screen, Drag, Click
 from libqtile.command import lazy
 from libqtile.config import Key, Group
-
-
-mod = 'mod1'
 
 
 def move_window_to_screen(screen):
@@ -51,7 +52,7 @@ font_params = {
 	'background': background,
 }
 
-
+mod = 'mod1'
 keys = [
     Key([mod], "h", lazy.hide_show_bar()),
     Key([mod], "k", lazy.layout.down()),
@@ -79,20 +80,20 @@ keys = [
     # kill current window
     Key([mod], "F4", lazy.window.kill()),
 
-    Key([mod, "shift"], "r", lazy.restart()),
-    Key([mod, "shift"], "q", lazy.shutdown()),
+    Key([mod, "control"], "r", lazy.restart()),
+    Key([mod, "control"], "q", lazy.shutdown()),
     
     # interact with prompts
     Key([mod], "r", lazy.spawncmd()),
     Key([mod], "g", lazy.switchgroup()),
     
-    # Also allow changing volume the old fashioned way.
+    # changing volume the old fashioned way
     Key([mod], "equal", lazy.spawn("amixer -c 0 -q set Master 2dB+")),
     Key([mod], "minus", lazy.spawn("amixer -c 0 -q set Master 2dB-")),
     
-    # take screenshot
-    # you have to click the window or drag and draw the region to snap
-    Key([mod, "shift"], "x", lazy.spawn("scrot '%Y-%m-%d_$wx$h_scrot.png' -e 'mv $f ~/' -b -s -z")),
+    # ake screenshot current window;
+    # you can drag and draw the region to snap (use mouse)
+    Key([mod], "Print", lazy.spawn("scrot '%Y-%m-%d_$wx$h_scrot.png' -e 'mv $f ~/' -b -s -z")),
 ]
 
 
@@ -115,14 +116,14 @@ group_names = [
     (u"\uf07b", {'layout': 'max', 'spawn': ['nemo']}),           # file manager
     (u"\uf120", {
         'layout': 'max',
-        'spawn': ['xterm ' + "exec 'gnome-terminal'"]
+        'spawn': ['xterm']
     }),                                                          # terminal
     (u"\uf086", {'layout': 'max', 'spawn': ['pidgin']}),         # jabber
     (u"\uf04b", {'layout': 'max', 'spawn': ['vlc']}),            # media player
     (u"\uf074", {'layout': 'max'}),                              # other
 ]
 for n, (i, o) in enumerate(group_names):
-    group_names[n] = str(n+1) + ": " + i, o
+    group_names[n] = str(n + 1) + ": " + i, o
 
 groups = [Group(name, **kwargs) for name, kwargs in group_names]
 
@@ -131,144 +132,96 @@ for i, (name, kwargs) in enumerate(group_names, 1):
     keys.append(Key([mod, "shift"], str(i), lazy.window.togroup(name)))
 
 layouts = [
-    #layout.Stack(stacks=2, border_normal="#222222"),
+    layout.Stack(stacks=2, border_normal="#222222"),
     layout.Tile(),
     layout.Max(),
-    #layout.TreeTab(),
+    layout.TreeTab(),
+    
 ]
 
 
-def humanize_bytes(value):
-    suff = ["B", "K", "M", "G", "T"]
-    while value > 1024. and len(suff) > 1:
-        value /= 1024.
-        suff.pop(0)
-    return "%03d%s" % (value, suff[0])
-
-
-class Metrics(base.InLoopPollText):
-
-    def __init__(self, **config):
-        self.cpu_usage, self.cpu_total = self.get_cpu_stat()
-        self.interfaces = {}
-        self.idle_ifaces = {}
-        base.InLoopPollText.__init__(self, **config)
-        self.update_interval = 5
-
-    def get_cpu_stat(self):
-        stat = [int(i) for i in open('/proc/stat').readline().split()[1:]]
-        return sum(stat[:3]), sum(stat)
-
-    def get_cpu_usage(self):
-        new_cpu_usage, new_cpu_total = self.get_cpu_stat()
-        cpu_usage = new_cpu_usage - self.cpu_usage
-        cpu_total = new_cpu_total - self.cpu_total
-        self.cpu_usage = new_cpu_usage
-        self.cpu_total = new_cpu_total
-        if cpu_total != 0:
-            cpu_percents = "%3d%%" % (float(cpu_usage) / float(cpu_total) * 100.)
-        else:
-            cpu_percents = "nan"
-        return 'cpu:%s' % cpu_percents
-
-    def get_mem_usage(self):
-        info = {}
-        for line in open('/proc/meminfo'):
-            key, val = line.split(':')
-            info[key] = int(val.split()[0])
-        mem = info['MemTotal']
-        mem -= info['MemFree']
-        mem -= info['Buffers']
-        mem -= info['Cached']
-        if int(info['MemTotal']) != 0:
-            mem_percents = '%3d%%' % (float(mem) / float(info['MemTotal']) * 100)
-        else:
-            mem_percents = 'nan'
-        return 'mem:%s' % mem_percents
-
-    def get_net_usage(self):
-        interfaces = []
-        basedir = '/sys/class/net'
-        for iface in os.listdir(basedir):
-            if iface in ('lo', ):
-                continue
-            j = os.path.join
-            ifacedir = j(basedir, iface)
-            statdir = j(ifacedir, 'statistics')
-            idle = iface in self.idle_ifaces
-            try:
-                if int(open(j(ifacedir, 'carrier')).read()):
-                    rx = int(open(j(statdir, 'rx_bytes')).read())
-                    tx = int(open(j(statdir, 'tx_bytes')).read())
-                    if iface not in self.interfaces:
-                        self.interfaces[iface] = (rx, tx)
-                    old_rx, old_tx = self.interfaces[iface]
-                    self.interfaces[iface] = (rx, tx)
-                    rx = rx - old_rx
-                    tx = tx - old_tx
-                    if rx or tx:
-                        idle = False
-                        self.idle_ifaces[iface] = 0
-                        rx = humanize_bytes(rx)
-                        tx = humanize_bytes(tx)
-                        interfaces.append('%15s' % '%s:%s/%s' % (iface, rx, tx))
-            except:
-                pass
-            if idle:
-                interfaces.append(
-                    '%s:%-9s' % (iface, ("idle:%02d" % self.idle_ifaces[iface]))
-                )
-                self.idle_ifaces[iface] += 1
-                if self.idle_ifaces[iface] > 30:
-                    del self.idle_ifaces[iface]
-        return " ".join(interfaces)
-
-    def poll(self):
-        stat = [self.get_cpu_usage(), self.get_mem_usage()]
-        net = self.get_net_usage()
-        if net:
-            stat.append(net)
-        return " ".join(stat)
-
-
-def get_bar():
+def get_bottom_bar():
     return bar.Bar([
+        widget.Image(filename=os.path.expanduser('~/.config/qtile/logo.png')),
         widget.GroupBox(
+            active=background,
+            background='#000000',
+            borderwidth=2,
+            font=font2groups,
+            #fontshadow='#AA0000',
+            fontsize=fontsize,
             highlight_method='block',
             inactive='222222',
-            font=font2groups,
-            fontsize=fontsize,
-            active=background,
-            urgent_border=alert,
-            padding=1,
-            borderwidth=2,
             margin_x=5,
             margin_y=2,
             opacity=0.5,
-            background='#000000'),
-            #widget.Sep(foreground=background),
-            widget.CurrentLayout(**font_params),
-            widget.Sep(foreground="#000000"),
-            widget.WindowName(**font_params),
-            widget.Sep(foreground="#000000"),
-            Metrics(**font_params),
-            widget.Systray(icon_size=16),
-            #widget.Sep(foreground=background),
-            widget.Clock(format="%c", **font_params),
+            padding=1,
+            rounded=False,
+            urgent_border=alert
+            ),
+        widget.CurrentLayout(**font_params),
+        widget.Sep(foreground='#000000'),
+        widget.Prompt(),
+        widget.Spacer(),
+        widget.KeyboardLayout(background='#FFFFFF',
+                              configured_keyboards=['us', 'ru'],
+                              font='Ubuntu',
+                              fontsize=14,
+                              foreground='#000000',
+                              ),
+        widget.Sep(foreground='#000000'),
+        widget.CPUGraph(background='#FFFFFF',
+                        border_color='#000000',
+                        frequency=2,
+                        graph_color='#FF0000',
+                        line_width=1,
+                        ),
+        widget.NetGraph(bandwidth_type='down',
+                        background='#FFFFFF',
+                        border_color='#000000',
+                        frequency=2,
+                        graph_color='#FFFFFF',
+                        interface='wlp4s0',
+                        line_width=1,
+                        ),
+        widget.Sep(foreground='#000000'),
+        widget.Volume(emoji=False,
+            mute_command=[
+                'amixer',
+                '-q',
+                'set',
+                'Master',
+                'toggle'],
+            background='#FFFFFF',
+            foreground='#000000'),
+        #widget.Clipboard(timeout=100),
+        widget.Sep(foreground='#000000'),
+        widget.Systray(icon_size=16, background='#FFFFFF'),
+        widget.Sep(foreground='#000000'),
+        widget.Clock(format='%c', **font_params),
+    ], 24)
+
+def get_top_bar():
+    return bar.Bar([
+        widget.WindowName(**font_params),
+        widget.Sep(foreground='#000000'),
+        #widget.TaskList(rounded=False), <== THIS BROKES GRAPHICAL ENVIRONMENT!!! NEVER UNCOMMENT THIS
+        widget.Sep(foreground='#000000'),
+        widget.LaunchBar([
+            ('gedit', 'gedit', 'text editor'),
+            ('logout', 'qshell:self.qtile.cmd_shutdown()', 'logout from qtile'),
+        ]),
     ], 20)
 
-
 screens = [
-    Screen(bottom=get_bar()),
+    Screen(bottom=get_bottom_bar(), top=get_top_bar()),
 ]
 
 
 @hook.subscribe.startup_once
 def autostart():
-    subprocess.Popen(["nm-applet"])
-    subprocess.Popen(["setxkbmap",
-                      "-layout", 'us,ru', '-option',
-                      'grp:ctrl_shift_toggle,grp_led:scroll,compose:rctrl'])
+    subprocess.Popen(['nm-applet'])
+    lazy.spawn('setxkbmap -layout us,ru -option grp:ctrl_shift_toggle,grp_led:scroll,compose:rctrl')
 
 
 def get_files():
