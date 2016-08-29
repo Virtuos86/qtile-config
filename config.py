@@ -2,12 +2,8 @@
 # coding: utf-8
 
 """
-Used applications and utils:
-    amixer, feh, firefox, gnome-terminal, nemo, pidgin, rofi, scrot, vlc, xterm
-
---------------------------------------------------------------------------------
-
-!: On my hardware configuration may be need `pavucontrol'.
+I use this applications and utils:
+    amixer, feh, firefox, gajim, gnome-terminal, nemo, rofi, scrot, vlc, xterm
 """
 
 import sys
@@ -27,6 +23,7 @@ from libqtile.command import lazy
 from libqtile.config import Key, Group
 
 
+"""
 def move_window_to_screen(screen):
     def cmd(qtile):
         w = qtile.currentWindow
@@ -36,7 +33,23 @@ def move_window_to_screen(screen):
         if w is not None:
             w.togroup(qtile.screens[screen].group.name)
     return cmd
+"""
 
+################################################################################
+
+KeyboardLayout = widget.KeyboardLayout(
+    background='#FFFFFF',
+    configured_keyboards=['us', 'ru'],
+    font='Ubuntu',
+    fontsize=14,
+    foreground='#000000',
+)
+def next_keyboard():
+    def cmd(qtile):
+        KeyboardLayout.next_keyboard()
+    return cmd
+
+################################################################################
 
 font = 'Font Awesome'#'FreeMono Bold'
 font2groups = 'Century Schoolbook L'
@@ -54,7 +67,7 @@ font_params = {
 
 mod = 'mod1'
 keys = [
-    Key([mod], "h", lazy.hide_show_bar()),
+    Key([mod], "h", lazy.hide_show_bar()),        
     Key([mod], "k", lazy.layout.down()),
     Key([mod], "j", lazy.layout.up()),
     Key([mod, "shift"], "k", lazy.layout.shuffle_down()),
@@ -67,10 +80,10 @@ keys = [
 
     Key([mod], "t", lazy.window.toggle_floating()),
 
-    Key([mod], "w", lazy.to_screen(0)),
-    Key([mod, "shift"], "w", lazy.function(move_window_to_screen(0))),
-    Key([mod], "e", lazy.to_screen(1)),
-    Key([mod, "shift"], "e", lazy.function(move_window_to_screen(1))),
+    #Key([mod], "w", lazy.to_screen(0)),
+    #Key([mod, "shift"], "w", lazy.function(move_window_to_screen(0))),
+    #Key([mod], "e", lazy.to_screen(1)),
+    #Key([mod, "shift"], "e", lazy.function(move_window_to_screen(1))),
 
     Key([mod], "Return", lazy.spawn("gnome-terminal")),
     
@@ -93,7 +106,15 @@ keys = [
     
     # ake screenshot current window;
     # you can drag and draw the region to snap (use mouse)
-    Key([mod], "Print", lazy.spawn("scrot '%Y-%m-%d_$wx$h_scrot.png' -e 'mv $f ~/' -b -s -z")),
+    Key([mod], "Print",
+        lazy.spawn("scrot '%Y-%m-%d_$wx$h_scrot.png' -e 'mv $f ~/' -b -s -z")),
+    
+    Key(['mod4'], 'space', lazy.function(next_keyboard())),
+    Key(['mod4'], '1', lazy.display_kb()),
+
+    # for Tile layout
+    Key([mod, "shift"], "i", lazy.layout.increase_ratio()),
+    Key([mod, "shift"], "d", lazy.layout.decrease_ratio()),
 ]
 
 
@@ -105,27 +126,69 @@ mouse = [
          start=lazy.window.get_size()),
 ]
 
+
+################################################################################
+
+FIREFOX     = u"\uf269"
+CODING      = u"\uf044"
+FM          = u"\uf07b"
+TERMINAL    = u"\uf120"
+JABBER      = u"\uf086"
+MEDIAPLAYER = u"\uf04b"
+OTHER       = u"\uf074"
+
 group_names = [
-    (u"\uf269", {'layout': 'max', 'spawn': ['firefox']}),        # web (firefox)
-    (u"\uf044", {
+    (
+        FIREFOX,
+        {
+            'layout': 'max',
+            'spawn': ['firefox']
+        }
+    ),
+    (
+        CODING,
+        {
+            'layout': 'max',
+            'spawn': [
+                'gedit %s' % os.path.expanduser('~/.config/qtile/config.py')
+            ]
+        }
+    ),
+    (
+        FM,
+        {
+            'layout': 'max',
+            'spawn': ['nemo']
+        }
+    ),
+    (
+        TERMINAL,
+        {
+            'layout': 'max',
+            'spawn': ['xterm']
+        }
+    ),
+    (
+        JABBER,
+        {
+            'layout': 'max',
+            'spawn': ['gajim']
+        }
+    ),
+    (MEDIAPLAYER, {
         'layout': 'max',
-        'spawn': [
-            'gedit ' + os.path.expanduser('~/.config/qtile/config.py')
-        ]
-    }),                                                          # coding
-    (u"\uf07b", {'layout': 'max', 'spawn': ['nemo']}),           # file manager
-    (u"\uf120", {
-        'layout': 'max',
-        'spawn': ['xterm']
-    }),                                                          # terminal
-    (u"\uf086", {'layout': 'max', 'spawn': ['pidgin']}),         # jabber
-    (u"\uf04b", {'layout': 'max', 'spawn': ['vlc']}),            # media player
-    (u"\uf074", {'layout': 'max'}),                              # other
+        'spawn': ['vlc -L -Z --open /home/szia/Музыка/Хелависа/']
+    }),
+    (OTHER, {'layout': 'max'}),
 ]
+
 for n, (i, o) in enumerate(group_names):
     group_names[n] = str(n + 1) + ": " + i, o
 
 groups = [Group(name, **kwargs) for name, kwargs in group_names]
+
+################################################################################
+
 
 for i, (name, kwargs) in enumerate(group_names, 1):
     keys.append(Key([mod], str(i), lazy.group[name].toscreen()))
@@ -148,7 +211,7 @@ def get_bottom_bar():
             background='#000000',
             borderwidth=2,
             font=font2groups,
-            #fontshadow='#AA0000',
+            fontshadow='#AA0000',
             fontsize=fontsize,
             highlight_method='block',
             inactive='222222',
@@ -163,35 +226,28 @@ def get_bottom_bar():
         widget.Sep(foreground='#000000'),
         widget.Prompt(),
         widget.Spacer(),
-        widget.KeyboardLayout(background='#FFFFFF',
-                              configured_keyboards=['us', 'ru'],
-                              font='Ubuntu',
-                              fontsize=14,
-                              foreground='#000000',
-                              ),
+        KeyboardLayout,
         widget.Sep(foreground='#000000'),
-        widget.CPUGraph(background='#FFFFFF',
-                        border_color='#000000',
-                        frequency=2,
-                        graph_color='#FF0000',
-                        line_width=1,
-                        ),
-        widget.NetGraph(bandwidth_type='down',
-                        background='#FFFFFF',
-                        border_color='#000000',
-                        frequency=2,
-                        graph_color='#FFFFFF',
-                        interface='wlp4s0',
-                        line_width=1,
-                        ),
+        widget.CPUGraph(
+            background='#FFFFFF',
+            border_color='#000000',
+            frequency=2,
+            graph_color='#FF0000',
+            line_width=1,
+        ),
+        widget.NetGraph(
+            bandwidth_type='down',
+            background='#FFFFFF',
+            border_color='#000000',
+            frequency=2,
+            graph_color='#0000FF',
+            interface='auto',
+            line_width=1,
+        ),
         widget.Sep(foreground='#000000'),
-        widget.Volume(emoji=False,
-            mute_command=[
-                'amixer',
-                '-q',
-                'set',
-                'Master',
-                'toggle'],
+        widget.Volume(
+            emoji=False,
+            mute_command=['amixer', '-q', 'set', 'Master', 'toggle'],
             background='#FFFFFF',
             foreground='#000000'),
         #widget.Clipboard(timeout=100),
@@ -205,39 +261,44 @@ def get_top_bar():
     return bar.Bar([
         widget.WindowName(**font_params),
         widget.Sep(foreground='#000000'),
-        #widget.TaskList(rounded=False), <== THIS BROKES GRAPHICAL ENVIRONMENT!!! NEVER UNCOMMENT THIS
         widget.Sep(foreground='#000000'),
         widget.LaunchBar([
-            ('gedit', 'gedit', 'text editor'),
-            ('logout', 'qshell:self.qtile.cmd_shutdown()', 'logout from qtile'),
-        ]),
+            ('Gedit', 'gedit', 'text editor'),
+            ('Empathy', 'empathy', 'Messenger'),
+            ('Logout', 'qshell:self.qtile.cmd_shutdown()', 'logout from qtile'),
+            ],
+            #default_icon='/usr/share/icons/Mint-X/mimetypes/16/application-x-executable.png',
+        )
     ], 20)
 
 screens = [
-    Screen(bottom=get_bottom_bar(), top=get_top_bar()),
+    Screen(
+        top=get_top_bar(),
+        bottom=get_bottom_bar()
+    ),
 ]
 
 
 @hook.subscribe.startup_once
 def autostart():
     subprocess.Popen(['nm-applet'])
-    lazy.spawn('setxkbmap -layout us,ru -option grp:ctrl_shift_toggle,grp_led:scroll,compose:rctrl')
+    #lazy.spawn('setxkbmap -layout us,ru -option grp:ctrl_shift_toggle,grp_led:scroll,compose:rctrl')
 
 
-def get_files():
-    patterns = [
-        '/usr/share/backgrounds/*.jpg',
-        '/usr/share/backgrounds/*/*.jpg',
-    ]
-    files = []
-    for i in patterns:
-        files.extend(glob(i))
-    return files
+################################################################################
+
+patterns = [
+    '/usr/share/backgrounds/*.jpg',
+    '/usr/share/backgrounds/*/*.jpg',
+]
+wallpapers = []
+for i in patterns:
+    wallpapers.extend(glob(i))
 
 
 def wallpaper():
     while True:
-        subprocess.call(["feh", "--bg-fill", choice(get_files())])
+        subprocess.call(["feh", "--bg-fill", choice(wallpapers)])
         sleep(300)
 
 
@@ -245,6 +306,14 @@ def wallpaper():
 def startup():
     from threading import Thread
     Thread(target=wallpaper).start()
+
+################################################################################
+
+
+@hook.subscribe.client_new
+def client_new(c):
+    if c.name in ('xterm', 'gnome-terminal'):
+        c.togroup('TERMINAL')
 
 
 def main(qtile):
