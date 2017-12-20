@@ -46,6 +46,7 @@ KeyboardLayout = widget.KeyboardLayout(
 )
 def next_keyboard():
     def cmd(qtile):
+        return
         KeyboardLayout.next_keyboard()
     return cmd
 
