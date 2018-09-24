@@ -1,11 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-"""
-I use this applications and utils:
-    amixer, feh, firefox, gajim, gnome-terminal, nemo, rofi, scrot, vlc, xterm
-"""
-
 import sys
 reload(sys)
 sys.setdefaultencoding('utf-8')
@@ -22,6 +17,17 @@ from libqtile.manager import Screen, Drag, Click
 from libqtile.command import lazy
 from libqtile.config import Key, Group
 
+#@hook.subscribe.startup
+#def dbus_register():
+#    x = os.environ['DESKTOP_AUTOSTART_ID']
+#    subprocess.Popen(['dbus-send',
+#                      '--session',
+#                      '--print-reply=string',
+#                      '--dest=org.gnome.SessionManager',
+#                      '/org/gnome/SessionManager',
+#                      'org.gnome.SessionManager.RegisterClient',
+#                      'string:qtile',
+#                      'string:' + x])
 
 """
 def move_window_to_screen(screen):
@@ -36,13 +42,22 @@ def move_window_to_screen(screen):
 """
 
 ################################################################################
+# COLORS
+
+white = '#FFFFFF'
+black = '#000000'
+red = '#FF0000'
+green = '#00FF00'
+blue = '#0000FF'
+
+################################################################################
 
 KeyboardLayout = widget.KeyboardLayout(
-    background='#FFFFFF',
+    background=white,
     configured_keyboards=['us', 'ru'],
     font='Ubuntu',
     fontsize=14,
-    foreground='#000000',
+    foreground=black,
 )
 def next_keyboard():
     def cmd(qtile):
@@ -52,10 +67,10 @@ def next_keyboard():
 
 ################################################################################
 
-font = 'Font Awesome'#'FreeMono Bold'
-font2groups = 'Century Schoolbook L'
-foreground = '#000000'
-background = '#FFFFFF'
+font = 'PragmataProMonoW20-Regular' #'FreeMono Bold'
+font2groups = 'Ubuntu Mono'#'Century Schoolbook L'
+foreground = black
+background = white
 alert = "#FFFF00"
 fontsize = 15
 
@@ -68,6 +83,7 @@ font_params = {
 
 mod = 'mod1'
 keys = [
+    Key([mod], "BackSpace", lazy.spawn("/home/virtuos86/PortWINE/PortWoT/data/scripts/start")),
     Key([mod], "h", lazy.hide_show_bar()),        
     Key([mod], "k", lazy.layout.down()),
     Key([mod], "j", lazy.layout.up()),
@@ -86,7 +102,7 @@ keys = [
     #Key([mod], "e", lazy.to_screen(1)),
     #Key([mod, "shift"], "e", lazy.function(move_window_to_screen(1))),
 
-    Key([mod], "Return", lazy.spawn("gnome-terminal")),
+    Key([mod], "Return", lazy.spawn("xfce4-terminal")),
     
     # dmenu-like menu ;)
     Key([mod], "p", lazy.spawn("rofi -show run")),
@@ -95,7 +111,9 @@ keys = [
     Key([mod], "F4", lazy.window.kill()),
 
     Key([mod, "control"], "r", lazy.restart()),
-    Key([mod, "control"], "q", lazy.shutdown()),
+    #Key([mod, 'control'], 'l', lazy.spawn('gnome-screensaver-command -l')),
+    Key([mod, 'control'], 'o', lazy.spawn('gnome-session-quit --logout --no-prompt')),
+    Key([mod, 'shift', 'control'], 'o', lazy.spawn('gnome-session-quit --power-off')),
     
     # interact with prompts
     Key([mod], "r", lazy.spawncmd()),
@@ -108,7 +126,7 @@ keys = [
     # ake screenshot current window;
     # you can drag and draw the region to snap (use mouse)
     Key([mod], "Print",
-        lazy.spawn("scrot '%Y-%m-%d_$wx$h_scrot.png' -e 'mv $f ~/' -b -s -z")),
+        lazy.spawn("scrot '%Y-%m-%d_$wx$h_scrot.png' -e 'mv $f ~/Изображения' -b -s -z")),
     
     Key(['mod4'], 'space', lazy.function(next_keyboard())),
     Key(['mod4'], '1', lazy.display_kb()),
@@ -116,6 +134,8 @@ keys = [
     # for Tile layout
     Key([mod, "shift"], "i", lazy.layout.increase_ratio()),
     Key([mod, "shift"], "d", lazy.layout.decrease_ratio()),
+
+    Key([mod], "F1", lazy.spawn("firefox57")),
 ]
 
 
@@ -130,20 +150,22 @@ mouse = [
 
 ################################################################################
 
-FIREFOX     = u"\uf269"
-CODING      = u"\uf044"
-FM          = u"\uf07b"
-TERMINAL    = u"\uf120"
-JABBER      = u"\uf086"
-MEDIAPLAYER = u"\uf04b"
-OTHER       = u"\uf074"
+FIREFOX     = u"*" # u"\uf269"
+CODING      = u"/" # u"\uf044"
+FM          = u"~" # u"\uf07b"
+TERMINAL    = u"#" # u"\uf120"
+JABBER      = u"%" # u"\uf086"
+MEDIAPLAYER = u">" # u"\uf04b"
+OTHER       = u"?" # u"\uf074"
+TANKS       = u"^" # u"\uf1e2"
+STEAM       = u"$" # u"\uf1b6"
 
 group_names = [
     (
         FIREFOX,
         {
             'layout': 'max',
-            'spawn': ['firefox']
+            'spawn': ['firefox57']
         }
     ),
     (
@@ -151,7 +173,7 @@ group_names = [
         {
             'layout': 'max',
             'spawn': [
-                'gedit %s' % os.path.expanduser('~/.config/qtile/config.py')
+                'subl %s' % os.path.expanduser('~/.config/qtile/config.py')
             ]
         }
     ),
@@ -159,28 +181,30 @@ group_names = [
         FM,
         {
             'layout': 'max',
-            'spawn': ['nemo']
+            'spawn': ['thunar']
         }
     ),
     (
         TERMINAL,
         {
             'layout': 'max',
-            'spawn': ['xterm']
+            'spawn': ['xfce4-terminal']
         }
     ),
     (
         JABBER,
         {
             'layout': 'max',
-            'spawn': ['gajim']
+            'spawn': ['telegram']
         }
     ),
     (MEDIAPLAYER, {
         'layout': 'max',
-        'spawn': ['vlc -L -Z --open /home/szia/Музыка/Хелависа/']
+        'spawn': []#['vlc -L -Z --open /home/szia/Музыка/Хелависа/']
     }),
     (OTHER, {'layout': 'max'}),
+    (TANKS, {'layout': 'max'}),
+    (STEAM, {'layout': 'max'}),
 ]
 
 for n, (i, o) in enumerate(group_names):
@@ -208,67 +232,74 @@ def get_bottom_bar():
     return bar.Bar([
         widget.Image(filename=os.path.expanduser('~/.config/qtile/logo.png')),
         widget.GroupBox(
-            active=background,
-            background='#000000',
+            active=black,
+            background=white,
             borderwidth=2,
             font=font2groups,
-            fontshadow='#AA0000',
+            #fontshadow='#AAAA00',
             fontsize=fontsize,
-            highlight_method='block',
-            inactive='222222',
+            #highlight_method='block',
+            inactive=white,
             margin_x=5,
             margin_y=2,
             opacity=0.5,
             padding=1,
             rounded=False,
-            urgent_border=alert
+            urgent_border=blue
             ),
         widget.CurrentLayout(**font_params),
-        widget.Sep(foreground='#000000'),
-        widget.Prompt(),
+        #widget.Sep(foreground=white),
+        #widget.Prompt(),
         widget.Spacer(),
-        KeyboardLayout,
-        widget.Sep(foreground='#000000'),
+        #KeyboardLayout,
+        #widget.Sep(foreground=black),
         widget.CPUGraph(
-            background='#FFFFFF',
-            border_color='#000000',
+            background=white,
+            border_color=black,
             frequency=2,
-            graph_color='#FF0000',
+            graph_color=red,
             line_width=1,
         ),
         widget.NetGraph(
             bandwidth_type='down',
-            background='#FFFFFF',
-            border_color='#000000',
+            background=white,
+            border_color=black,
             frequency=2,
-            graph_color='#0000FF',
+            graph_color=blue,
             interface='auto',
             line_width=1,
         ),
-        widget.Sep(foreground='#000000'),
+        widget.Sep(foreground=white, background=white),
         widget.Volume(
-            emoji=False,
+            emoji=True,
             mute_command=['amixer', '-q', 'set', 'Master', 'toggle'],
-            background='#FFFFFF',
-            foreground='#000000'),
+            background=white,
+            foreground=black),
         #widget.Clipboard(timeout=100),
-        widget.Sep(foreground='#000000'),
-        widget.Systray(icon_size=16, background='#FFFFFF'),
-        widget.Sep(foreground='#000000'),
+        widget.Sep(foreground=white, background=white),
+        widget.Systray(icon_size=20, background=white),
+        widget.Sep(foreground=white, background=white),
         widget.Clock(format='%c', **font_params),
     ], 24)
 
 def get_top_bar():
     return bar.Bar([
-        widget.WindowName(**font_params),
-        widget.Sep(foreground='#000000'),
-        widget.Sep(foreground='#000000'),
+        widget.WindowName(background='#000000', foreground='#FFFFFF', font=font, fontsize=fontsize),
+        #widget.Sep(foreground=black),
+        #widget.Sep(foreground=black),
         widget.LaunchBar([
-            ('Gedit', 'gedit', 'text editor'),
-            ('Empathy', 'empathy', 'Messenger'),
-            ('Logout', 'qshell:self.qtile.cmd_shutdown()', 'logout from qtile'),
+            ('/home/virtuos86/.config/qtile/st3.png', 'subl', 'Text editor'),
+            ('/home/virtuos86/.config/qtile/ff.png', 'firefox57', 'Web browser'),
+            ('/home/virtuos86/.config/qtile/OmegaT.png', '/usr/local/bin/omegat', 'Text translation'),
+            ('/home/virtuos86/.config/qtile/sunvox.png', '/home/virtuos86/Загрузки/sunvox/sunvox/linux_x86_64/sunvox_for_old_cpu', 'Sintezator'),
+            ('/home/virtuos86/.config/qtile/telegram.png', '/home/virtuos86/Загрузки/Debs/Telegram/Telegram', 'Instant messenger'),
+            ('/home/virtuos86/.config/qtile/MagicISO.png', "wine '/home/virtuos86/.wine/drive_c/Program Files (x86)/MagicISO/MagicISO.exe'", 'MagicISO'),
+            ('/home/virtuos86/.config/qtile/Steam.png', "/home/virtuos86/PortSteam/data/scripts/start", 'Steam'),
+            #('Logout', 'qshell:self.qtile.cmd_shutdown()', 'logout from qtile'),
             ],
             #default_icon='/usr/share/icons/Mint-X/mimetypes/16/application-x-executable.png',
+            #foreground=black,
+            background=white
         )
     ], 20)
 
@@ -283,24 +314,37 @@ screens = [
 @hook.subscribe.startup_once
 def autostart():
     subprocess.Popen(['nm-applet'])
-    #lazy.spawn('setxkbmap -layout us,ru -option grp:ctrl_shift_toggle,grp_led:scroll,compose:rctrl')
+    subprocess.Popen(['pulseaudio', '--start', '--exit-idle-time=-1'])
+    os.system('setxkbmap -layout us,ru -option grp:ctrl_shift_toggle,grp_led:scroll,compose:rwin')
 
 
 ################################################################################
 
 patterns = [
-    '/usr/share/backgrounds/*.jpg',
-    '/usr/share/backgrounds/*/*.jpg',
+    '/home/virtuos86/Изображения/Instagram/Chika/*.jpg',
+    #'/usr/share/backgrounds/*.jpg',
+    #'/usr/share/backgrounds/*/*.jpg',
 ]
 wallpapers = []
 for i in patterns:
     wallpapers.extend(glob(i))
 
+keys.append(Key([mod], "F12", lazy.spawn("feh" + " --bg-fill " + choice(wallpapers))))
 
 def wallpaper():
+    global wallpapers
+    if not len(wallpapers):
+        return
+    used_wallpapers = []
     while True:
-        subprocess.call(["feh", "--bg-fill", choice(wallpapers)])
-        sleep(300)
+        if not len(wallpapers):
+            wallpapers = used_wallpapers
+            used_wallpapers = []
+        wallpaper = choice(wallpapers)
+        wallpapers.remove(wallpaper)
+        used_wallpapers.append(wallpaper)
+        subprocess.call(["feh", "--bg-fill", wallpaper])
+        sleep(30)
 
 
 @hook.subscribe.startup
@@ -313,7 +357,7 @@ def startup():
 
 @hook.subscribe.client_new
 def client_new(c):
-    if c.name in ('xterm', 'gnome-terminal'):
+    if c.name in ('xterm', 'gnome-terminal', 'xfce4-terminal'):
         c.togroup('TERMINAL')
 
 
